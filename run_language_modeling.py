@@ -33,6 +33,7 @@ from glob import glob
 from typing import Optional
 import torch.nn as nn
 from torch.utils.data import ConcatDataset
+from argparse import ArgumentParser
 
 from finetune_utils import *
 
@@ -85,9 +86,6 @@ class ModelArguments:
     cache_dir: Optional[str] = field(
         default=None, metadata={"help": "Where do you want to store the pretrained models downloaded from s3"}
     )
-    layer: str = field(
-        default = 'last', metadata={"help": "'first','last','all','middle','lowrank"}
-    )
 
 
 @dataclass
@@ -127,6 +125,15 @@ class DataTrainingArguments:
         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
     )
 
+@dataclass
+class FinetuneArguments:
+    """
+    Arguments pertaining to what data we are going to input our model for training and eval.
+    """
+    layer: str = field(
+        default='last', metadata={"help": "first, last, all, lora"}
+    )
+
 
 def get_dataset(args: DataTrainingArguments, tokenizer: PreTrainedTokenizer, evaluate=False):
     file_path = args.eval_data_file if evaluate else args.train_data_file
@@ -143,8 +150,13 @@ def main():
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    #ft_args = ArgumentParser()
+    #ft_args.add_argument("--layer", default='last', type=str)
+    #ft_args = ft_args.parse_args()
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments,FinetuneArguments))
+
+
+    model_args, data_args, training_args, ft_args = parser.parse_args_into_dataclasses()
 
     if data_args.eval_data_file is None and training_args.do_eval:
         raise ValueError(
@@ -220,7 +232,7 @@ def main():
     #check from here
     model = copy.deepcopy(model)
 
-    if model_args.layer == 'lora':
+    if ft_args.layer == 'lora':
         rank = 10
         for m in model.transformer.h:
             m.mlp.c_fc = lowrank(m.mlp.c_fc, rank)
@@ -228,7 +240,7 @@ def main():
             m.attn.c_attn = lowrank(m.attn.c_attn, rank)
             m.attn.c_proj = lowrank(m.attn.c_proj, rank)
 
-    optimizer = torch.optim.Adam(parameters_to_fine_tune(model, model_args.layer), lr=1e-4)
+    optimizer = torch.optim.Adam(parameters_to_fine_tune(model, ft_args.layer), lr=1e-4)
 
 
     special_tokens_dict = {'bos_token': '<BOS>', 'eos_token': '<EOS>', 'pad_token': '<PAD>'}
@@ -242,7 +254,7 @@ def main():
         )
 
     if data_args.block_size <= 0:
-        data_args.block_size = tokenizer.max_len
+        data_args.block_size = tokenizer.model_max_length
         # Our input block size will be the max possible for the model
     else:
         data_args.block_size = min(data_args.block_size, tokenizer.max_len)
@@ -262,8 +274,8 @@ def main():
         data_collator=data_collator,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        prediction_loss_only=True,
-    )
+        optimizers = (optimizer,None)
+    ) #prediction_loss_only=True,
 
     # Training
     if training_args.do_train:

@@ -32,8 +32,9 @@ from dataclasses import dataclass, field
 from glob import glob
 from typing import Optional
 import torch.nn as nn
-
 from torch.utils.data import ConcatDataset
+
+from finetune_utils import *
 
 from transformers import (
     CONFIG_MAPPING,
@@ -84,6 +85,9 @@ class ModelArguments:
     cache_dir: Optional[str] = field(
         default=None, metadata={"help": "Where do you want to store the pretrained models downloaded from s3"}
     )
+    layer: str = field(
+        default = 'last', metadata={"help": "'first','last','all','middle','lowrank"}
+    )
 
 
 @dataclass
@@ -133,45 +137,6 @@ def get_dataset(args: DataTrainingArguments, tokenizer: PreTrainedTokenizer, eva
             tokenizer=tokenizer, file_path=file_path, block_size=args.block_size, overwrite_cache=args.overwrite_cache
         )
 
-def parameters_to_fine_tune(model,mode):
-    """
-    Select the parameters in `model` that should be fine-tuned in mode `mode`.
-
-    Args:
-      model: the model we're fine-tuning
-      mode: the fine-tuning mode we're using; may be 'all', 'last', 'first',
-        'middle', or 'loraN' (where N is an integer)
-    
-    Returns:
-      A list of nn.Parameters of `model` that should be fine-tuned in the given
-        fine-tuning mode.
-    """
-    # YOUR CODE HERE
-    if mode == 'all':
-        return model.parameters()
-    elif mode == 'last':
-        return list(model.transformer.h[-2:].parameters())
-    elif mode == 'first':
-        return list(model.transformer.h[:2].parameters())
-    elif mode == 'middle':
-        start = len(model.transformer.h)//2 - 1
-        return list(model.transformer.h[start:start+2].parameters())
-    elif mode.startswith('lora'):
-        params = []
-        for m in model.transformer.h:
-            params.append(m.attn.c_attn.A)
-            params.append(m.attn.c_attn.B)
-            params.append(m.mlp.c_fc.A)
-            params.append(m.mlp.c_fc.B)            
-            params.append(m.mlp.c_proj.A)
-            params.append(m.mlp.c_proj.B)
-        '''
-        for m in model.modules():
-            if isinstance(m, LoRAConv1DWrapper):
-                params.append(m.A)
-                params.append(m.B)
-        '''
-        return params
 
 def main():
     # See all possible arguments in src/transformers/training_args.py
@@ -250,6 +215,21 @@ def main():
     else:
         logger.info("Training new model from scratch")
         model = AutoModelWithLMHead.from_config(config)
+
+
+    #check from here
+    model = copy.deepcopy(model)
+
+    if model_args.layer == 'lora':
+        rank = 10
+        for m in model.transformer.h:
+            m.mlp.c_fc = lowrank(m.mlp.c_fc, rank)
+            m.mlp.c_proj = lowrank(m.mlp.c_proj, rank)
+            m.attn.c_attn = lowrank(m.attn.c_attn, rank)
+            m.attn.c_proj = lowrank(m.attn.c_proj, rank)
+
+    optimizer = torch.optim.Adam(parameters_to_fine_tune(model, model_args.layer), lr=1e-4)
+
 
     special_tokens_dict = {'bos_token': '<BOS>', 'eos_token': '<EOS>', 'pad_token': '<PAD>'}
     num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)

@@ -21,7 +21,7 @@ python run_mlm.py \
     --do_eval \
     --eval_dataset=test.txt \
     --layer='last' \
-    --overwrite_output_dir 
+    --overwrite_output_dir
 
 python run_language_modeling.py \
     --output_dir=output \
@@ -33,3 +33,5 @@ python run_language_modeling.py \
     --eval_data_file=test.txt \
     --layer='last' \
     --overwrite_output_dir
+
+python run_generation.py --model_type=gpt2 --model_name_or_path=output/checkpoint-1500 --length=200 --prompt="This is the lyrics of a love song by Drake: I just can't sleep tonight,"

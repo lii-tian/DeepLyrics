@@ -12,6 +12,17 @@ Run script: https://huggingface.co/transformers/v2.5.0/examples.html
 export TRAIN_FILE=/path/to/dataset/wiki.train.raw
 export TEST_FILE=/path/to/dataset/wiki.test.raw
 
+python run_mlm.py \
+    --output_dir=output \
+    --model_type=gpt2 \
+    --model_name_or_path=gpt2-medium\
+    --do_train \
+    --train_file=valid.txt \
+    --do_eval \
+    --eval_dataset=test.txt \
+    --layer='last' \
+    --overwrite_output_dir 
+
 python run_language_modeling.py \
     --output_dir=output \
     --model_type=gpt2 \
@@ -21,6 +32,4 @@ python run_language_modeling.py \
     --do_eval \
     --eval_data_file=test.txt \
     --layer='last' \
-    --overwrite_output_dir 
-
-
+    --overwrite_output_dir

@@ -157,6 +157,7 @@ def main():
 
 
     model_args, data_args, training_args, ft_args = parser.parse_args_into_dataclasses()
+    training_args.per_device_train_batch_size = 2  # @lsf
 
     if data_args.eval_data_file is None and training_args.do_eval:
         raise ValueError(
@@ -228,9 +229,10 @@ def main():
         logger.info("Training new model from scratch")
         model = AutoModelWithLMHead.from_config(config)
 
+    print(model.num_parameters())
 
     #check from here
-    model = copy.deepcopy(model)
+    # model = copy.deepcopy(model)
 
     if ft_args.layer == 'lora':
         rank = 10
@@ -274,11 +276,16 @@ def main():
         data_collator=data_collator,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        optimizers = (optimizer,None)
+        optimizers = (optimizer,None),
     ) #prediction_loss_only=True,
+
+    print("torch.cuda.current_device()", torch.cuda.current_device())
+    print("torch.cuda.device(0)", torch.cuda.device(0))
+    print("torch.cuda.get_device_name(0)", torch.cuda.get_device_name(0))
 
     # Training
     if training_args.do_train:
+        print("right before do_train", torch.cuda.memory_allocated())
         model_path = (
             model_args.model_name_or_path
             if model_args.model_name_or_path is not None and os.path.isdir(model_args.model_name_or_path)

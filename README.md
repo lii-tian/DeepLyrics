@@ -12,26 +12,15 @@ Run script: https://huggingface.co/transformers/v2.5.0/examples.html
 export TRAIN_FILE=/path/to/dataset/wiki.train.raw
 export TEST_FILE=/path/to/dataset/wiki.test.raw
 
-python run_mlm.py \
-    --output_dir=output \
-    --model_type=gpt2 \
-    --model_name_or_path=gpt2-medium\
-    --do_train \
-    --train_file=valid.txt \
-    --do_eval \
-    --eval_dataset=test.txt \
-    --layer='last' \
-    --overwrite_output_dir
-
 python run_language_modeling.py \
-    --output_dir=output \
+    --output_dir=output/first_gpt2_medium \
     --model_type=gpt2 \
     --model_name_or_path=gpt2-medium\
     --do_train \
-    --train_data_file=valid.txt \
+    --train_data_file=train.txt \
     --do_eval \
-    --eval_data_file=test.txt \
-    --layer='last' \
-    --overwrite_output_dir
+    --eval_data_file=valid.txt \
+    --layer='first' \
+    --overwrite_output_dir=0
 
 python run_generation.py --model_type=gpt2 --model_name_or_path=output/checkpoint-1500 --length=200 --prompt="This is the lyrics of a love song by Drake: I just can't sleep tonight,"

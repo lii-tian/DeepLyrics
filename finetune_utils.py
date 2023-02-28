@@ -38,6 +38,8 @@ def parameters_to_fine_tune(model,layer):
     elif layer == 'middle':# only finetune a middle layer
         start = len(model.transformer.h)//2 - 1
         return list(model.transformer.h[start:start+2].parameters())
+    elif layer = 'prefix':
+        return []
     elif layer == 'lowrank':  #finetune the low rank adaptation of the attention modules A and B
         params = []
         for m in model.transformer.h:

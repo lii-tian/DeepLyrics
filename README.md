@@ -23,4 +23,4 @@ python run_language_modeling.py \
     --layer='first' \
     --overwrite_output_dir=0
 
-python run_generation.py --model_type=gpt2 --model_name_or_path=output/checkpoint-1500 --length=200 --prompt="This is the lyrics of a love song by Drake: I just can't sleep tonight,"
+python run_generation.py --model_type=gpt2 --model_name_or_path=output/first_gpt2_medium/ --length=50 --prompt="This is the lyrics of a love song by Drake: I just can't sleep tonight,"

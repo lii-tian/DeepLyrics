@@ -251,8 +251,6 @@ def main():
         logger.info("Training new model from scratch")
         model = AutoModelForCausalLM.from_config(config)
 
-    print(model.num_parameters())
-
     #check from here
     # model = copy.deepcopy(model)
 
@@ -263,7 +261,7 @@ def main():
             m.mlp.c_proj = lowrank(m.mlp.c_proj, rank)
             m.attn.c_attn = lowrank(m.attn.c_attn, rank)
             m.attn.c_proj = lowrank(m.attn.c_proj, rank)
-
+    print(f'training {len(list(parameters_to_fine_tune(model, ft_args.layer)))} parameters...')
     optimizer = torch.optim.Adam(parameters_to_fine_tune(model, ft_args.layer), lr=1e-4)
 
 

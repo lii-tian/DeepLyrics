@@ -122,8 +122,9 @@ class DataTrainingArguments:
         },
     )
     overwrite_cache: bool = field(
-        default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
-    )
+        default=False, metadata={"help": "Overwrite the cached training and evaluation sets"})
+    
+    
 
 @dataclass
 class FinetuneArguments:
@@ -158,7 +159,6 @@ def main():
 
     model_args, data_args, training_args, ft_args = parser.parse_args_into_dataclasses()
     training_args.per_device_train_batch_size = 2  # @lsf
-    training_args.logging_dir="logs"
 
     if data_args.eval_data_file is None and training_args.do_eval:
         raise ValueError(
@@ -208,7 +208,6 @@ def main():
     else:
         config = CONFIG_MAPPING[model_args.model_type]()
         logger.warning("You are instantiating a new config instance from scratch.")
-
     if model_args.tokenizer_name:
         tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, cache_dir=model_args.cache_dir)
     elif model_args.model_name_or_path:

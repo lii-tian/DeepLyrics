@@ -180,7 +180,8 @@ def main():
 
 
     model_args, data_args, training_args, ft_args = parser.parse_args_into_dataclasses()
-    training_args.per_device_train_batch_size = 2  # @lsf
+    training_args.per_device_train_batch_size = 2  
+    training_args.num_train_epochs= 2
 
     if data_args.eval_data_file is None and training_args.do_eval:
         raise ValueError(
@@ -312,7 +313,8 @@ def main():
             checkpoint = training_args.resume_from_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         trainer.save_model()  # Saves the tokenizer too for easy upload
-
+        tokenizer.save_pretrained(training_args.output_dir)
+        
         metrics = train_result.metrics
 
         max_train_samples = (
@@ -322,7 +324,6 @@ def main():
 
         trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
-        trainer.save_state()
 
     # Evaluation
     if training_args.do_eval:
@@ -341,11 +342,6 @@ def main():
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
 
-    kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "text-generation"}
-    if training_args.push_to_hub:
-        trainer.push_to_hub(**kwargs)
-    else:
-        trainer.create_model_card(**kwargs)
 
 
 def _mp_fn(index):

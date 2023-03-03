@@ -182,6 +182,7 @@ def main():
     model_args, data_args, training_args, ft_args = parser.parse_args_into_dataclasses()
     training_args.per_device_train_batch_size = 2  
     training_args.num_train_epochs= 2
+    training_args.save_steps=1000 
 
     if data_args.eval_data_file is None and training_args.do_eval:
         raise ValueError(

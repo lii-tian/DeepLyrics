@@ -176,8 +176,7 @@ def main():
     #ft_args = ArgumentParser()
     #ft_args.add_argument("--layer", default='last', type=str)
     #ft_args = ft_args.parse_args()
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments,FinetuneArguments))
-
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, FinetuneArguments))
 
     model_args, data_args, training_args, ft_args = parser.parse_args_into_dataclasses()
     training_args.per_device_train_batch_size = 2  
@@ -325,6 +324,7 @@ def main():
 
         trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
+
 
     # Evaluation
     if training_args.do_eval:

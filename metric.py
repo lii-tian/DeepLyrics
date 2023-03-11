@@ -17,3 +17,12 @@ def preprocess_logits_for_metrics(logits, labels):
     if isinstance(logits, tuple):
         logits = logits[0]
         return logits.argmax(dim=-1)
+
+def adjust_length_to_model(length, max_sequence_length):
+    if length < 0 and max_sequence_length > 0:
+        length = max_sequence_length
+    elif 0 < max_sequence_length < length:
+        length = max_sequence_length  # No generation bigger than model size
+    elif length < 0:
+        length = MAX_LENGTH  # avoid infinite loop
+    return length
